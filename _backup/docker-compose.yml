@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  k3s-master-1:
+    image: ubuntu-ansible-node
+    container_name: k3s-master-1
+    privileged: true
+    hostname: k3s-master
+    networks:
+      - ansible-network
+    ports:
+      - "2222:22"
+      - "8022:80"
+    tty: true
+    stdin_open: true
+
+  k3s-worker-1:
+    image: ubuntu-ansible-node
+    container_name: k3s-worker-1
+    privileged: true
+    hostname: k3s-worker-1
+    networks:
+      - ansible-network
+    ports:
+      - "2223:22"
+    tty: true
+    stdin_open: true
+
+  k3s-worker-2:
+    image: ubuntu-ansible-node
+    container_name: k3s-worker-2
+    privileged: true
+    hostname: k3s-worker-2
+    networks:
+      - ansible-network
+    ports:
+      - "2224:22"
+    tty: true
+    stdin_open: true
+
+networks:
+  ansible-network:
+    driver: bridge

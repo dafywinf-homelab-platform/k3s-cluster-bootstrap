@@ -1,0 +1,29 @@
+#cloud-config
+hostname: docker-cloud
+fqdn: docker-cloud.local
+
+# Create a default user with sudo privileges
+users:
+  - name: admin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3dG...your-ssh-key... user@host
+
+# Update the package list and install some packages
+package_update: true
+package_upgrade: true
+packages:
+  - curl
+  - git
+  - net-tools
+
+# Run commands on first boot
+runcmd:
+  - echo "Welcome to the Docker cloud-init container!" > /etc/motd
+  - apt install -y tree
+  - systemctl restart ssh
+
+# Enable and start SSH service
+ssh_pwauth: true
+disable_root: false

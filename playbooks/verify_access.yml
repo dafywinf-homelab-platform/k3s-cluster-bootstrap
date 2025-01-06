@@ -1,0 +1,12 @@
+---
+- name: Verify SSH access to all hosts
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Ensure hosts are accessible via SSH
+      ansible.builtin.ping:
+
+    - name: Write-out the hostname
+      debug:
+        msg: Running a debug statement on {{ inventory_hostname }}

@@ -1,0 +1,7 @@
+---
+- name: Ping all Ansible nodes using a role
+  hosts: ansible_nodes
+  gather_facts: no
+
+  roles:
+    - ping_nodes

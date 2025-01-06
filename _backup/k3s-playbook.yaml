@@ -1,0 +1,28 @@
+---
+- name: Install k3s Cluster
+  hosts: k3s_master
+  become: true
+  tasks:
+    - name: Install k3s on Master Node
+      shell: |
+        curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+      args:
+        creates: /etc/rancher/k3s/k3s.yaml
+
+    - name: Get k3s Token
+      shell: cat /var/lib/rancher/k3s/server/node-token
+      register: k3s_token
+
+    - name: Display k3s Token
+      debug:
+        msg: "Token is {{ k3s_token.stdout }}"
+
+- name: Install k3s on Worker Nodes
+  hosts: k3s_worker
+  become: true
+  tasks:
+    - name: Install k3s on Worker Node
+      shell: |
+        curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars['master-node']['ansible_host'] }}:6443 K3S_TOKEN={{ hostvars['master-node']['k3s_token']['stdout'] }} sh -
+      args:
+        creates: /etc/rancher/k3s/k3s.yaml
