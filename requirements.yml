@@ -1,3 +1,5 @@
 collections:
   - name: community.general
     version: 8.0.0
+  - name: enmanuelmoreira.k3s
+    version: 1.7.3

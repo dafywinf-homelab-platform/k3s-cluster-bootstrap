@@ -1,2 +1,3 @@
 ---
 - import_playbook: playbooks/verify_access.yml
+- import_playbook: playbooks/install_k3s.yml
