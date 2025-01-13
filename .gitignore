@@ -53,3 +53,9 @@ secrets.tfvars
 
 # Downloaded Artifactrs
 collections/
+
+# Kubeconfig
+kubeconfig
+
+# O/S Files
+.DS_Store

@@ -42,6 +42,15 @@
     - role: enmanuelmoreira.k3s.k3s_server_post
       become: true
 
+- name: Replace 'default' cluster name with 'proxmox_cluster' in kubeconfig file
+  hosts: k3s_masters
+  tasks:
+    - name: Replace 'default' with 'replacement_word'
+      ansible.builtin.replace:
+        path: "{{ ansible_user_dir }}/.kube/config"
+        regexp: '\bdefault\b'
+        replace: "{{local_kubeconfig_cluster_name}}"
+
 - name: Storing kubeconfig in the playbook directory
   hosts: k3s_masters
   environment: "{{ proxy_env | default({}) }}"
@@ -49,6 +58,6 @@
     - name: Copying kubeconfig from {{ hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname'] }}
       ansible.builtin.fetch:
         src: "{{ ansible_user_dir }}/.kube/config"
-        dest: ./kubeconfig
+        dest: "{{ local_kubeconfig_file }}"
         flat: true
       when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
