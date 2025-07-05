@@ -1,0 +1,5 @@
+- name: Setup k3s servers
+  hosts: k3s_master-1
+  environment: "{{ proxy_env | default({}) }}"
+  roles:
+    - role: traefik

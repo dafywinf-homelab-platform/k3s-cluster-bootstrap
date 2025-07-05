@@ -42,14 +42,37 @@
     - role: enmanuelmoreira.k3s.k3s_server_post
       become: true
 
-- name: Replace 'default' cluster name with 'proxmox_cluster' in kubeconfig file
+- name: Grant read access to privileged file for the default user
   hosts: k3s_masters
+  become: yes
   tasks:
-    - name: Replace 'default' with 'replacement_word'
-      ansible.builtin.replace:
-        path: "{{ ansible_user_dir }}/.kube/config"
-        regexp: '\bdefault\b'
-        replace: "{{local_kubeconfig_cluster_name}}"
+    - name: Get the default non-privileged user
+      set_fact:
+        default_user: "{{ lookup('env', 'USER') if ansible_user == 'root' else ansible_user }}"
+
+    - name: Ensure the k3s.yaml file is readable by the default user
+      file:
+        path: /etc/rancher/k3s/k3s.yaml
+        owner: root
+        group: "{{ default_user }}"
+        mode: '0640'  # Owner has read-write, group has read-only
+
+    - name: Verify permissions
+      command: ls -l /etc/rancher/k3s/k3s.yaml
+      register: file_permissions
+
+    - name: Show updated permissions
+      debug:
+        var: file_permissions.stdout
+
+#- name: Replace 'default' cluster name with 'proxmox_cluster' in kubeconfig file
+#  hosts: k3s_masters
+#  tasks:
+#    - name: Replace 'default' with 'replacement_word'
+#      ansible.builtin.replace:
+#        path: "{{ ansible_user_dir }}/.kube/config"
+#        regexp: '\bdefault\b'
+#        replace: "{{local_kubeconfig_cluster_name}}"
 
 - name: Storing kubeconfig in the playbook directory
   hosts: k3s_masters
@@ -61,3 +84,5 @@
         dest: "{{ local_kubeconfig_file }}"
         flat: true
       when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
+
+

@@ -1,5 +1,5 @@
 collections:
   - name: community.general
-    version: 8.0.0
+  - name: kubernetes.core
   - name: enmanuelmoreira.k3s
     version: 1.7.3

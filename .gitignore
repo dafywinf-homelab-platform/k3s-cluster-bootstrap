@@ -4,58 +4,59 @@
 *.iml
 *.ipr
 
-### Terraform ###
+# Ignore SSH private keys and security credentials
+*.pem
+*.key
+*.crt
+*.csr
+*.vault
+vault_pass.txt
 
-# Terraform files
-*.tfstate
-*.tfstate.*
+# Ignore Ansible inventory files with sensitive data
+inventory
+hosts
+*.ini
+*.yml.secret
 
-# Terraform plan files
-*.tfplan
-
-# Crash log files
-crash.log
-
-# Ignore override files as they are usually used to override resources locally and not meant to be committed
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Ignore sensitive variable files
-*.auto.tfvars
-
-# Ignore local Terraform directories
-.terraform/
-.terraform.lock.hcl
-
-# Ignore CLI configuration files
-.terraformrc
-terraform.rc
-
-# Ignore logs and other local files
+# Ignore logs and temporary files
 *.log
+*.retry
+*.swp
+*.swo
+*.bak
+*.tmp
 
-# Ignore backup files created by Terraform
-*.tfvars.old
-*.tfvars.backup
+# Ignore cache and compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-../proxmox-ansible/keys/
-
-# Ignore the secrets file
-secrets.tfvars
-
-# Ignore the keys location
-../proxmox-ansible/keys/
-
-# Ignore keys
-*.pub
-
-# Downloaded Artifactrs
+# Ignore Ansible Galaxy roles and collections (if installed locally)
+roles/
 collections/
 
-# Kubeconfig
-kubeconfig
+# Ignore environment files and secrets
+.env
+secrets.yml
+group_vars/all/vault.yml
 
-# O/S Files
+# Ignore Terraform state files (if using Terraform with Ansible)
+terraform.tfstate*
+terraform.tfvars
+.terraform/
+
+# Ignore IDE/editor-specific files
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore backup files
+*.bak
 .DS_Store
+Thumbs.db
+
+_backup/
+
+# Ignore Kubernetes configuration files
+playbooks/kubeconfig

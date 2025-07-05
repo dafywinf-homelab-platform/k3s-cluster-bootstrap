@@ -32,18 +32,75 @@ This setup ensures all hosts defined in the inventory are accessible via SSH usi
 
 ---
 
-This setup will help you quickly verify whether all your infrastructure hosts are reachable via SSH using Ansible. 🚀 Let
-me know if you encounter any issues! 😊
+This setup will help you quickly verify whether all your infrastructure hosts are reachable via SSH using Ansible.
+
+## Accessing the Cluster
+
+```bash
+k9s --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig
+```
 
 ## Sample Deployment
 
+This deployment creates a single replica of a web server serving a basic "Hello from NGINX" page, exposed via a
+Kubernetes Service. By default, the application is configured to deploy into the hello-world namespace, ensuring its
+resources are logically grouped and isolated within the cluster.
+
+
 ```bash
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig create namespace hello-world
 kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig apply -f ./sample/hello-world.yml
+
+# Optional - If you want to deploy a second instance of the service in a different namespace
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig create namespace hello-world-again
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig apply -f ./sample/hello-world-again.yml
+
+# Optional - If you want to deploy a third instance with Ingress
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig create namespace hello-world-ingress
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig apply -f ./sample/hello-world-ingress.yml
+
+```
+**Note::** The hello-world-ingress.yml will need to updated with the IP address that MetalLB load balancer has assigned 
+to the Traefik service. You can find this IP address by running the command below:
+
+```bash
+ kubectl get svc -n kube-system traefik
+```
+
+### Accessing the Services
+
+Since this deployment utilizes a LoadBalancer type Service and your cluster is configured with MetalLB, the service will automatically be assigned an external IP address from your MetalLB address pool. This allows you to access the application from outside the Kubernetes cluster without needing kubectl port-forward.
+
+To find the external IP address assigned by MetalLB, use the following command:
+
+```bash
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig get service hello-world-service -n hello-world
+
+# Optional - If you deployed the second instance
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig get service hello-world-service -n hello-world-again
+
+# Optional - If you deployed the third instance with Ingress - Accessed via Ingress - Traefik 
+wget http://hello.192.168.86.10.nip.io 
+```
+
+### Delete the Service
+
+```bash
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig delete namespace hello-world
+
+# Optional - If you want to deploy a second instance of the service in a different namespace
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig delete namespace hello-world-again
+
+# Optional - If you want to deploy a third instance with Ingress
+kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig delete namespace hello-world-ingress
 ```
 
 ## Todo
-
+* Deploy Traefik - DONE
 * Review the errors that exist in Lens at the Node level.
+* Deploy ArgoCD
+* Extract the KubeVIP and MetalLB IP addresses and use them in later work e.g. ArgoCD deployment
+* Note: Currently have simple added
 
 ## **Research and Documentation**
 
@@ -64,4 +121,8 @@ relevant considerations for its integration into the project.
 
 These documents serve as a foundational resource for anyone involved in implementing, maintaining, or extending the
 current setup.
+
+### Additional References:
+
+- [K3s Cluster Example with Cilium, Let's Encrypt, Renovate, Prometheus](https://github.com/axivo/k3s-cluster)
 

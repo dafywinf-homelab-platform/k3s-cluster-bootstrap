@@ -1,0 +1,15 @@
+---
+
+- name: Deploy Helm and Install Helm Diff Plugin
+  hosts: k3s_masters
+  become: true
+  environment: "{{ proxy_env | default({}) }}"
+  tasks:
+    - name: Deploy Helm using Role
+      ansible.builtin.include_role:
+        name: enmanuelmoreira.k3s.helm
+
+    - name: Install Helm Diff Plugin
+      kubernetes.core.helm_plugin:
+        plugin_path: "https://github.com/databus23/helm-diff"
+        state: present
