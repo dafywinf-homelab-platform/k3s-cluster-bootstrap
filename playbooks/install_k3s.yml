@@ -86,3 +86,28 @@
       when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
 
 
+# Create the local-storage mount for local-storage on all worker nodes
+- name: Ensure /mnt/data/local-storage exists on all worker nodes
+  hosts: k3s_workers
+  become: true
+  tasks:
+    - name: Create /mnt/data/local-storage directory
+      file:
+        path: /mnt/data/local-storage
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+# Create the long-horn storage-mount for longhorn on all worker nodes
+- name: Ensure /mnt/data/kafka exists on all worker nodes
+  hosts: k3s_workers
+  become: true
+  tasks:
+    - name: Create /mnt/data/longhorn-storage directory
+      file:
+        path: /mnt/data/longhorn-storage
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'

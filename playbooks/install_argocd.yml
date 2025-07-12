@@ -1,7 +1,7 @@
 ---
 - name: Deploy ArgoCD with Bitnami Helm Chart
   hosts: k3s_master-1
-  environment:
-    K8S_AUTH_KUBECONFIG: "{{ ansible_user_dir }}/.kube/config"
+#  environment:
+#    K8S_AUTH_KUBECONFIG: "{{ ansible_user_dir }}/.kube/config"
   roles:
     - argocd
