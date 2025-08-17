@@ -1,128 +1,214 @@
-# Ansible Host Accessibility Verification
+# K3s Cluster Bootstrap
 
-## Overview
+[![CI - Validate](https://github.com/dafywinf-homelab-platform/k3s-cluster-bootstrap/actions/workflows/ci-validate.yaml/badge.svg)](https://github.com/dafywinf-homelab-platform/k3s-cluster-bootstrap/actions/workflows/ci-validate.yaml)
 
-This setup ensures all hosts defined in the inventory are accessible via SSH using the `community.general.ping` module.
+Automated day-0/day-1 provisioning of a **K3s** cluster on Proxmox-hosted Ubuntu VMs using **Ansible**. This repo applies opinionated homelab defaults (Kube-VIP, MetalLB, Traefik) and includes a minimal smoke-test to verify networking and ingress.
 
-## Prerequisites
-
-- Ansible installed (`ansible --version`)
-- SSH keys set up for the remote hosts
-- Valid inventory file
-
-## Usage
-
-1. Install the required collection:
-   ```bash
-   ansible-galaxy collection install -r requirements.yml
-   ```   
-
-1. Install the required collection:
-   ```bash
-   ansible-playbook site.yml
-   ```
-
-## 🧠 **Key Takeaways**
-
-1. **Inventory File (`hosts.yml`)** defines your infrastructure.
-2. **Collection (`community.general`)** provides the `ping` module.
-3. **Playbook (`verify_access.yml`)** ensures SSH connectivity to all hosts.
-4. **Configuration (`ansible.cfg`)** sets global Ansible behavior.
-5. **Group Vars (`all.yml`)** handle shared SSH settings.
+For the core design and decisions, see **[docs/01-design-specification.md](docs/01-design-specification.md)**.
 
 ---
 
-This setup will help you quickly verify whether all your infrastructure hosts are reachable via SSH using Ansible.
+## Features
+
+* Ansible playbooks for:
+
+   * Host reachability checks
+   * OS preparation (swap, time sync, base packages)
+   * K3s control plane + workers install/join
+   * **Kube-VIP** API virtual IP (ARP mode)
+   * **MetalLB** L2 address pool
+   * **Traefik** ingress
+   * Smoke tests (Service/Ingress reachability)
+* Declarative configuration via inventories and `group_vars`
+* CI linting hooks (recommended) and optional Dependabot
+
+---
+
+## Pre-conditions
+
+* Proxmox VMs already created (see **Related Repository** below)
+* Admin workstation with:
+
+   * Ansible ≥ 2.15 (`ansible --version`)
+   * Python 3.x
+   * SSH key-based access to target hosts
+* Inventory populated: `inventory/hosts.yml`
+* Basic `group_vars` set (VIP, MetalLB pool, K3s version, CIDRs)
+* Nodes have outbound internet access
+
+---
+
+## Quick Start
+
+1. Install required Ansible collections:
+
+```bash
+ansible-galaxy collection install -r requirements.yml
+```
+
+2. Verify host accessibility:
+
+```bash
+ansible-playbook -i inventory/hosts.yml playbooks/01_verify_access.yml
+```
+
+3. Bootstrap the cluster (full run):
+
+```bash
+ansible-playbook -i inventory/hosts.yml site.yml
+```
+
+---
+
+## Ansible Host Accessibility Verification
+
+This step confirms all hosts in the inventory are reachable via SSH using the `community.general.ping` module.
+
+**Key bits**
+
+1. **Inventory** (`inventory/hosts.yml`) defines the target machines.
+2. **Collection** (`community.general`) provides the `ping` module.
+3. **Playbook** (`playbooks/01_verify_access.yml`) executes the connectivity check.
+4. **Configuration** (`ansible.cfg`) sets global Ansible behaviour.
+5. **Group Vars** (`inventory/group_vars/all.yml`) hold shared SSH and cluster settings.
+
+---
 
 ## Accessing the Cluster
 
-```bash
-k9s --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig
-```
-
-## Sample Deployment
-
-This deployment creates a single replica of a web server serving a basic "Hello from NGINX" page, exposed via a
-Kubernetes Service. By default, the application is configured to deploy into the hello-world namespace, ensuring its
-resources are logically grouped and isolated within the cluster.
-
+The playbooks generate a kubeconfig named **`proxmox_k3s_kubeconfig`** in the **current working directory** when you run them. Point your tools at this file:
 
 ```bash
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig create namespace hello-world
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig apply -f ./sample/hello-world.yml
-
-# Optional - If you want to deploy a second instance of the service in a different namespace
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig create namespace hello-world-again
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig apply -f ./sample/hello-world-again.yml
-
-# Optional - If you want to deploy a third instance with Ingress
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig create namespace hello-world-ingress
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig apply -f ./sample/hello-world-ingress.yml
-
+export KUBECONFIG="$(pwd)/proxmox_k3s_kubeconfig"
+kubectl get nodes
+# or
+k9s
 ```
-**Note::** The hello-world-ingress.yml will need to updated with the IP address that MetalLB load balancer has assigned 
-to the Traefik service. You can find this IP address by running the command below:
+
+> The kubeconfig is generated locally at runtime and **must not be committed** to version control.
+
+---
+
+## Sample Deployment (Hello World)
+
+Deploy minimal HTTP services to validate LoadBalancer allocation and Ingress:
 
 ```bash
- kubectl get svc -n kube-system traefik
+# 1) Basic service
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" create namespace hello-world
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" apply -f ./sample/hello-world.yml -n hello-world
+
+# 2) Optional: second instance
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" create namespace hello-world-again
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" apply -f ./sample/hello-world-again.yml -n hello-world-again
+
+# 3) Optional: ingress-backed instance
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" create namespace hello-world-ingress
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" apply -f ./sample/hello-world-ingress.yml -n hello-world-ingress
 ```
 
-### Accessing the Services
-
-Since this deployment utilizes a LoadBalancer type Service and your cluster is configured with MetalLB, the service will automatically be assigned an external IP address from your MetalLB address pool. This allows you to access the application from outside the Kubernetes cluster without needing kubectl port-forward.
-
-To find the external IP address assigned by MetalLB, use the following command:
+### Find External IPs (MetalLB)
 
 ```bash
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig get service hello-world-service -n hello-world
-
-# Optional - If you deployed the second instance
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig get service hello-world-service -n hello-world-again
-
-# Optional - If you deployed the third instance with Ingress - Accessed via Ingress - Traefik 
-wget http://hello.192.168.86.10.nip.io 
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" get svc -n hello-world hello-world-service
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" get svc -n hello-world-again hello-world-service
 ```
 
-### Delete the Service
+### Ingress via Traefik (`nip.io`)
+
+Update `sample/hello-world-ingress.yml` to use the **Traefik** EXTERNAL-IP (assigned by MetalLB):
 
 ```bash
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig delete namespace hello-world
-
-# Optional - If you want to deploy a second instance of the service in a different namespace
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig delete namespace hello-world-again
-
-# Optional - If you want to deploy a third instance with Ingress
-kubectl --kubeconfig=$HOME/.ssh/proxmox_k3s_kubeconfig delete namespace hello-world-ingress
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" -n kube-system get svc traefik
+# Suppose EXTERNAL-IP is 192.168.86.10, then:
+wget -qO- http://hello.192.168.86.10.nip.io
 ```
 
-## Todo
-* Deploy Traefik - DONE
-* Review the errors that exist in Lens at the Node level.
-* Deploy ArgoCD
-* Extract the KubeVIP and MetalLB IP addresses and use them in later work e.g. ArgoCD deployment
-* Note: Currently have simple added
+### Clean up
 
-## **Research and Documentation**
+```bash
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" delete namespace hello-world
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" delete namespace hello-world-again
+kubectl --kubeconfig="$(pwd)/proxmox_k3s_kubeconfig" delete namespace hello-world-ingress
+```
 
-As part of the implementation work, extensive research has been conducted into all the underlying technologies to ensure
-a robust and well-informed deployment. Detailed summaries of each technology, their use cases, and best practices have
-been compiled into dedicated README files for ease of reference. These summaries provide a comprehensive understanding
-of the components used in the project.
+---
 
-### **Available Documentation**
+## Configuration
 
-- [Address Resolution Protocol (ARP)](documentation/research/04-ARP.md)
-- [MetalLB](documentation/research/02-MetalLB.md)
-- [Kube-VIP](documentation/research/03-KubeVIP.md)
-- [DNS Resolution](documentation/research/01-DNS.md)
+Cluster-wide settings live under `inventory/group_vars/`:
 
-Each README contains an in-depth exploration of the respective technology, including its purpose, operation, and any
-relevant considerations for its integration into the project.
+* `kube_vip_address`, `kube_vip_interface`
+* `metallb_pools` (L2 ranges reserved on your LAN)
+* `k3s_version`, `cluster_cidr`, `service_cidr`
+* Optional `ingress_domain_suffix` (defaults nicely to `nip.io` for homelab)
 
-These documents serve as a foundational resource for anyone involved in implementing, maintaining, or extending the
-current setup.
+> Reserve your MetalLB pool in DHCP/router to avoid IP conflicts.
 
-### Additional References:
+---
 
-- [K3s Cluster Example with Cilium, Let's Encrypt, Renovate, Prometheus](https://github.com/axivo/k3s-cluster)
+## Repository Layout (overview)
 
+```
+ansible.cfg
+requirements.yml
+site.yml
+inventory/
+  hosts.yml
+  group_vars/
+playbooks/
+  01_verify_access.yml
+  10_os_prep.yml
+  20_k3s_install.yml
+  30_kubevip.yml
+  40_metallb.yml
+  50_traefik.yml
+  90_smoke.yml
+roles/
+docs/
+  01-design-specification.md
+  research/
+sample/
+```
+
+---
+
+## CI / Maintenance
+
+* **CI**: `ci-validate.yaml` workflow for `ansible-lint`, `yamllint`, and basic structure checks.
+* **Dependabot**: optional updates for GitHub Actions and collections.
+* **Renovate**: not enabled by default.
+
+---
+
+## Version Control Hygiene
+
+Ensure the generated kubeconfig is ignored:
+
+```
+# kubeconfig generated by playbooks
+proxmox_k3s_kubeconfig
+```
+
+---
+
+## Research & Background
+
+* [DNS Resolution](docs/research/01-DNS.md)
+* [MetalLB](docs/research/02-MetalLB.md)
+* [Kube-VIP](docs/research/03-KubeVIP.md)
+* [ARP](docs/research/04-ARP.md)
+
+---
+
+## Related Repository
+
+This project assumes the Kubernetes target VMs already exist. See the VM pipeline and conventions in:
+
+* **Proxmox VM Bootstrap:** [https://github.com/dafywinf-homelab-platform/proxmox-vm-bootstrap](https://github.com/dafywinf-homelab-platform/proxmox-vm-bootstrap)
+
+---
+
+## Status & Roadmap
+
+Live backlog and improvements are tracked in **[docs/01-design-specification.md](docs/01-design-specification.md)** under *To-Dos & Improvements*. The README is intentionally focused on usage and setup to stay concise and consistent with the *proxmox-vm-bootstrap* repository.

@@ -1,6 +1,15 @@
 ---
-- import_playbook: playbooks/verify_access.yml
-- import_playbook: playbooks/install_k3s.yml
-- import_playbook: playbooks/install_helm.yml
-- import_playbook: playbooks/install_traefik.yml
-#- import_playbook: playbooks/install_argocd.yml
+- name: Verify cluster access
+  import_playbook: playbooks/verify_access.yml
+
+- name: Install k3s
+  import_playbook: playbooks/install_k3s.yml
+
+- name: Install Helm
+  import_playbook: playbooks/install_helm.yml
+
+- name: Install Traefik
+  import_playbook: playbooks/install_traefik.yml
+
+# - name: Install ArgoCD
+#   import_playbook: playbooks/install_argocd.yml

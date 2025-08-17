@@ -1,0 +1,29 @@
+extends: default
+
+rules:
+  # Required by ansible-lint’s yamllint baseline
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1
+  comments-indentation: false
+  braces:
+    max-spaces-inside: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+
+  # Additional preferences (safe with the baseline)
+  line-length:
+    max: 120
+    allow-non-breakable-words: true
+  document-start: disable
+  truthy: disable
+  indentation:
+    indent-sequences: consistent
+
+ignore: |
+  .ansible/
+  _backup/
+  .github/
+  docs/
+  sample/

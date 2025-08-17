@@ -1,6 +1,5 @@
 ---
 - hosts: localhost
-
   tasks:
     - name: Get local information
       debug:

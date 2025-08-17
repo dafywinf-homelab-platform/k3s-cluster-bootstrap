@@ -1,0 +1,10 @@
+profile: moderate
+use_default_rules: true
+warn_list:
+  - experimental
+exclude_paths:
+  - .ansible/
+  - .github/
+  - docs/
+  - collections/
+  - output/
