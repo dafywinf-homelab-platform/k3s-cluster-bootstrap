@@ -1,0 +1,13 @@
+---
+- name: Retrieve the ArgoCD admin password
+  shell: |
+    kubectl get secret {{ argocd_release_name }}-initial-admin-secret \
+      -n {{ argocd_namespace }} \
+      -o jsonpath='{.data.password}' | \
+      base64 -d
+  register: admin_password
+  become: true
+
+- name: Display the ArgoCD admin password
+  debug:
+    msg: "ArgoCD admin password: {{ admin_password.stdout }}"

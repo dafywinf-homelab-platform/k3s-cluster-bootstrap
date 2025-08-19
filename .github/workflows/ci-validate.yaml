@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  packages: read   # <-- needed so GITHUB_TOKEN can pull from ghcr.io
 
 jobs:
   validate:
@@ -20,23 +21,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # Optional: login to GHCR to avoid anonymous rate limits
-#      - name: Login to GHCR
-#        if: ${{ !cancelled() }}
-#        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Show Docker info
+      - name: Docker info
         run: docker info
 
-      # If you ever want CI to force a specific image tag, uncomment and set here:
-      # - name: Run validate with pinned images
-      #   run: |
-      #     make \
-      #       TF_IMAGE=hashicorp/terraform:1.8.5 \
-      #       TFLINT_IMAGE=ghcr.io/terraform-linters/tflint:v0.58.1 \
-      #       TFSEC_IMAGE=aquasec/tfsec:v1.28.12 \
-      #       SHELLCHECK_IMAGE=koalaman/shellcheck:v0.10.0 \
-      #       validate
+      # Authenticate to GHCR to avoid anonymous pull rate limits
+      - name: Login to GHCR
+        if: ${{ !cancelled() }}
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Run validate (Makefile)
+      - name: Prepare cache directory
+        run: mkdir -p .ansible/collections
+
+      - name: Cache Ansible collections
+        uses: actions/cache@v4
+        with:
+          path: .ansible/collections
+          key: ansible-collections-${{ hashFiles('requirements.yml') }}-v1
+          restore-keys: |
+            ansible-collections-
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Validate
         run: make validate

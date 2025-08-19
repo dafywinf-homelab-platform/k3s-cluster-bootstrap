@@ -1,0 +1,10 @@
+---
+# Main tasks for ArgoCD deployment
+- name: Include installation tasks
+  include_tasks: 01-install.yml
+
+- name: Include post-installation tasks
+  include_tasks: 02-post-install.yml
+
+# - name: Configure DNS entry
+#  include_tasks: 03-dns.yml

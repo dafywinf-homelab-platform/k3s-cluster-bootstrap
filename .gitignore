@@ -33,8 +33,8 @@ __pycache__/
 *.pyd
 
 # Ignore Ansible Galaxy roles and collections (if installed locally)
-roles/
-collections/
+
+.ansible/
 
 # Ignore environment files and secrets
 .env

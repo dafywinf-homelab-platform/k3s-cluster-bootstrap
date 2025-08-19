@@ -1,4 +1,5 @@
-# Makefile — Dockerised validation for this Ansible repo
+# Official Ansible Dev Tools image (bundles ansible-lint AND yamllint) - (pin versions for reproducibility)
+ANSIBLE_DEV_TOOLS_IMG ?= ghcr.io/ansible/community-ansible-dev-tools:v25.5.2
 
 SHELL := /bin/bash
 
@@ -15,24 +16,48 @@ else
 TTY := -t
 endif
 
+# Where Galaxy collections are installed (keep in sync with ansible.cfg)
+GALAXY_DIR            ?= .ansible/collections
+ANSIBLE_REQUIREMENTS  ?= requirements.yml
+
+# Single docker run template (ansible.cfg drives paths)
 RUN := $(DOCKER) run --rm $(TTY) -u $(UID_GID) $(NET) $(MOUNT)
 
-# Official Ansible Dev Tools image (bundles ansible-lint AND yamllint)
-ANSIBLE_DEV_TOOLS_IMG ?= ghcr.io/ansible/community-ansible-dev-tools:v25.5.2
 
-# Where Galaxy collections are installed (and cached in CI)
-GALAXY_DIR ?= .ansible/collections
+.PHONY: all help clean install test lint \
+        validate validate-ansible validate-yaml \
+        collections-clean collections-install collections-reset
 
-.PHONY: help validate validate-ansible validate-yaml galaxy-install
+# --- “Standard” entry points --------------------------------------------------
+
+all: validate               ## Default action: run full validation
 
 help:
 	@echo "Targets:"
-	@echo "  make validate           - run YAML + Ansible validation via Docker"
-	@echo "  make validate-yaml      - run yamllint via Docker"
-	@echo "  make validate-ansible   - run ansible-lint via Docker"
-	@echo "  make galaxy-install     - install Galaxy collections into $(GALAXY_DIR) via Docker"
+	@echo "  make all                 - default, runs 'validate'"
+	@echo "  make install             - install dependencies (Ansible Galaxy collections)"
+	@echo "  make test                - run test/validation pipeline (alias for 'validate')"
+	@echo "  make lint                - run linters (yamllint + ansible-lint)"
+	@echo "  make clean               - remove local artefacts (collections)"
+	@echo "  make validate            - install collections, then run YAML + Ansible validation"
+	@echo "  make validate-yaml       - run yamllint"
+	@echo "  make validate-ansible    - run ansible-lint"
+	@echo "  make collections-clean   - remove $(GALAXY_DIR)"
+	@echo "  make collections-install - install from $(ANSIBLE_REQUIREMENTS) into $(GALAXY_DIR)"
+	@echo "  make collections-reset   - clean + install collections"
 
-validate: validate-yaml validate-ansible
+install: collections-install
+
+test: validate
+
+lint: validate-yaml validate-ansible
+
+clean: collections-clean
+
+# --- Validation ---------------------------------------------------------------
+
+# Install collections before running validation so local + CI behave the same
+validate: collections-install validate-yaml validate-ansible
 
 validate-yaml:
 	@$(RUN) $(ANSIBLE_DEV_TOOLS_IMG) bash -lc 'FILES="$$(git ls-files \"*.yml\" \"*.yaml\")"; \
@@ -41,7 +66,21 @@ validate-yaml:
 validate-ansible:
 	@$(RUN) $(ANSIBLE_DEV_TOOLS_IMG) bash -lc "ansible-lint -v"
 
-galaxy-install:
-	@mkdir -p $(GALAXY_DIR)
-	@$(RUN) $(ANSIBLE_DEV_TOOLS_IMG) \
-		bash -lc 'if [[ -f requirements.yml ]]; then ansible-galaxy collection install -r requirements.yml -p "$(GALAXY_DIR)"; else echo "requirements.yml not found"; fi'
+# --- Collections lifecycle ----------------------------------------------------
+
+collections-clean:
+	@echo ">> Removing $(GALAXY_DIR)"
+	@rm -rf "$(GALAXY_DIR)"
+
+collections-install:
+	@mkdir -p "$(GALAXY_DIR)"
+	@$(RUN) $(ANSIBLE_DEV_TOOLS_IMG) bash -lc '\
+		if [[ -f "$(ANSIBLE_REQUIREMENTS)" ]]; then \
+			echo ">> Installing Ansible collections from $(ANSIBLE_REQUIREMENTS) into $(GALAXY_DIR)"; \
+			ansible-galaxy collection install -r "$(ANSIBLE_REQUIREMENTS)" -p "$(GALAXY_DIR)"; \
+		else \
+			echo ">> $(ANSIBLE_REQUIREMENTS) not found; skipping collections install"; \
+		fi'
+
+collections-reset: collections-clean collections-install
+	@echo ">> Collections reset complete"

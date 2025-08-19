@@ -1,0 +1,124 @@
+# server:
+#  ingress:
+#    enabled: true
+#    hosts:
+#      - name: argod.192.168.86.10.nip.io
+#    annotations:
+#      traefik.ingress.kubernetes.io/router.entrypoints: web
+#      traefik.ingress.kubernetes.io/router.priority: "10"
+
+## Global settings
+# global:
+#  imageRegistry: ""
+#  imagePullSecrets: [ ]
+#  storageClass: "standard"  # Set the default storage class, if required.
+#
+## Application settings
+server:
+  # Service settings for MetalLB integration
+  #  service:
+  #    type: LoadBalancer
+  #    annotations:
+  #      metallb.universe.tf/allow-shared-ip: "true"  # Allow shared IP for MetalLB
+
+  # Traefik-specific ingress configuration
+  # DW CHANGES
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    hostname: argocd.192.168.86.10.sslip.io
+    tls: false
+    extraTls:
+      - hosts:
+          - argocd.192.168.86.10.sslip.io
+        secretName: argocd-tls
+
+
+#  ingress:
+#    enabled: true
+#    ingressClassName: traefik
+#    annotations:
+#      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+#      traefik.ingress.kubernetes.io/router.tls: "true"
+#    hosts:
+#      - name: argod.192.168.86.10.nip.io  # Replace with your domain
+#        path: /
+#      tls:
+#        - secretName: argocd-tls
+#          hosts:
+#            - argocd.k3s.local
+#
+#  resources:
+#    requests:
+#      memory: "128Mi"
+#      cpu: "250m"
+#    limits:
+#      memory: "512Mi"
+#      cpu: "500m"
+#
+# applicationController:
+#  replicas: 2
+#  resources:
+#    requests:
+#      memory: "128Mi"
+#      cpu: "250m"
+#    limits:
+#      memory: "512Mi"
+#      cpu: "500m"
+#
+# repoServer:
+#  replicas: 2
+#  resources:
+#    requests:
+#      memory: "128Mi"
+#      cpu: "250m"
+#    limits:
+#      memory: "512Mi"
+#      cpu: "500m"
+#
+# dex:
+#  enabled: false  # Enable Dex for authentication
+#  resources:
+#    requests:
+#      memory: "128Mi"
+#      cpu: "250m"
+#    limits:
+#      memory: "512Mi"
+#      cpu: "500m"
+#
+# notifications:
+#  enabled: false
+#  replicas: 1
+#  resources:
+#    requests:
+#      memory: "64Mi"
+#      cpu: "125m"
+#    limits:
+#      memory: "256Mi"
+#      cpu: "250m"
+
+## Redis configuration
+# redis:
+#  enabled: true
+#  usePassword: false
+#  master:
+#    resources:
+#      requests:
+#        memory: "64Mi"
+#        cpu: "125m"
+#      limits:
+#        memory: "256Mi"
+#        cpu: "250m"
+#
+# High Availability settings
+# ha:
+#  enabled: false
+
+# RBAC configuration
+# rbac:
+#  policy: |
+#    p, role:admin, applications, *, */*, allow
+#    g, admin, role:admin
