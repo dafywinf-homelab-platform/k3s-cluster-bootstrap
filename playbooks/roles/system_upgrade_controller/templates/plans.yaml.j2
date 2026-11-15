@@ -1,0 +1,53 @@
+---
+# {{ ansible_managed }}
+# Masters first, one at a time (keeps etcd quorum). They only run DaemonSets, so cordon without draining.
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: server-plan
+  namespace: {{ suc_namespace }}
+spec:
+  concurrency: 1
+  cordon: true
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: In
+        values: ["true"]
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  serviceAccountName: system-upgrade
+  upgrade:
+    image: rancher/k3s-upgrade
+  version: {{ suc_k3s_version }}
+---
+# Workers after all masters are done (prepare step waits for server-plan), drained one at a time.
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: agent-plan
+  namespace: {{ suc_namespace }}
+spec:
+  concurrency: 1
+  cordon: true
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+  prepare:
+    image: rancher/k3s-upgrade
+    args: ["prepare", "server-plan"]
+  drain:
+    force: true
+    deleteEmptydirData: true
+    ignoreDaemonSets: true
+    skipWaitForDeleteTimeout: 60
+  serviceAccountName: system-upgrade
+  upgrade:
+    image: rancher/k3s-upgrade
+  version: {{ suc_k3s_version }}

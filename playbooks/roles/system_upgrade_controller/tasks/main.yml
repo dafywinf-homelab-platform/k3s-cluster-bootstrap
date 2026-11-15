@@ -1,0 +1,44 @@
+---
+- name: Download system-upgrade-controller manifests
+  ansible.builtin.get_url:
+    url: "{{ suc_release_url }}/{{ item }}"
+    dest: "/tmp/suc-{{ suc_version }}-{{ item }}"
+    mode: '0644'
+  loop:
+    - crd.yaml
+    - system-upgrade-controller.yaml
+
+- name: Apply system-upgrade-controller CRDs and controller
+  kubernetes.core.k8s:
+    state: present
+    src: "/tmp/suc-{{ suc_version }}-{{ item }}"
+    kubeconfig: "{{ suc_kubeconfig }}"
+  loop:
+    - crd.yaml
+    - system-upgrade-controller.yaml
+
+- name: Wait for system-upgrade-controller to be available
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    name: system-upgrade-controller
+    namespace: "{{ suc_namespace }}"
+    kubeconfig: "{{ suc_kubeconfig }}"
+    wait: true
+    wait_condition:
+      type: Available
+      status: "True"
+    wait_timeout: 300
+
+- name: Apply k3s upgrade Plans (target {{ suc_k3s_version }})
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'plans.yaml.j2') | from_yaml_all | list }}"
+    kubeconfig: "{{ suc_kubeconfig }}"
+
+- name: Clean up downloaded manifests
+  ansible.builtin.file:
+    path: "/tmp/suc-{{ suc_version }}-{{ item }}"
+    state: absent
+  loop:
+    - crd.yaml
+    - system-upgrade-controller.yaml
