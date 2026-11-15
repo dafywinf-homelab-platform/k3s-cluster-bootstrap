@@ -2,7 +2,7 @@
 
 [![CI - Validate](https://github.com/dafywinf-homelab-platform/k3s-cluster-bootstrap/actions/workflows/ci-validate.yaml/badge.svg)](https://github.com/dafywinf-homelab-platform/k3s-cluster-bootstrap/actions/workflows/ci-validate.yaml)
 
-Automated day-0/day-1 provisioning of a **K3s** cluster on Proxmox-hosted Ubuntu VMs using **Ansible**. This repo applies opinionated homelab defaults (Kube-VIP, MetalLB, Traefik) and includes a minimal smoke-test to verify networking and ingress.
+Automated day-0/day-1 provisioning of a **K3s** cluster on Proxmox-hosted Ubuntu VMs using **Ansible**. This repo applies opinionated homelab defaults (Kube-VIP, MetalLB, automatic OS patching, Argo CD) and includes a minimal smoke-test to verify networking and ingress.
 
 For the core design and decisions, see **[docs/01-design-specification.md](docs/01-design-specification.md)**.
 
@@ -17,7 +17,9 @@ For the core design and decisions, see **[docs/01-design-specification.md](docs/
    * K3s control plane + workers install/join
    * **Kube-VIP** API virtual IP (ARP mode)
    * **MetalLB** L2 address pool
-   * **Traefik** ingress
+   * Automatic OS patching (unattended-upgrades, Ubuntu Pro Livepatch) and k3s upgrades (system-upgrade-controller)
+   * **Argo CD** and the root `platform` app-of-apps. Traefik, kured, monitoring and storage are deployed by Argo CD
+     from [homelab-gitops](https://github.com/dafywinf-homelab-platform/homelab-gitops), not by this repo
    * Smoke tests (Service/Ingress reachability)
 * Declarative configuration via inventories and `group_vars`
 * CI linting hooks (recommended) and optional Dependabot
@@ -157,14 +159,13 @@ inventory/
   hosts.yml
   group_vars/
 playbooks/
-  01_verify_access.yml
-  10_os_prep.yml
-  20_k3s_install.yml
-  30_kubevip.yml
-  40_metallb.yml
-  50_traefik.yml
-  90_smoke.yml
-roles/
+  verify_access.yml
+  install_k3s.yml            # k3s (enmanuelmoreira.k3s collection): kube-vip, MetalLB
+  configure_os_patching.yml  # unattended-upgrades + Ubuntu Pro (roles/os_patching, roles/ubuntu_pro)
+  install_helm.yml
+  upgrade_k3s.yml            # system-upgrade-controller + Plans targeting k3s_version
+  install_argocd.yml         # Argo CD + root "platform" Application -> homelab-gitops
+  roles/
 docs/
   01-design-specification.md
   research/
