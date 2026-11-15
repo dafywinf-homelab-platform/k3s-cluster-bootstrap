@@ -60,3 +60,6 @@ _backup/
 
 # Ignore Kubernetes configuration files
 playbooks/kubeconfig
+# kubeconfigs carry cluster-admin credentials: never commit them
+proxmox_k3s_kubeconfig
+*kubeconfig*

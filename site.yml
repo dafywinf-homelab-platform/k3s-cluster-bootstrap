@@ -14,5 +14,8 @@
 - name: Install system-upgrade-controller (k3s upgrades)
   import_playbook: playbooks/upgrade_k3s.yml
 
+- name: Create platform Secrets (kept out of Git)
+  import_playbook: playbooks/configure_platform_secrets.yml
+
 - name: Install ArgoCD
   import_playbook: playbooks/install_argocd.yml
