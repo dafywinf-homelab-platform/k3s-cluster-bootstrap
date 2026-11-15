@@ -59,7 +59,8 @@ kube_vip_bgp_peeraddress: "192.168.86.11"  # Defines the address for the BGP pee
 kube_vip_bgp_peeras: "64512"  # Defines the AS for the BGP peer
 
 # apiserver_endpoint is virtual ip-address which will be configured on each master
-apiserver_endpoint: 192.168.86.10
+# Moved from .10 to .9 on 2026-11-15: .10 is Traefik's MetalLB address and must not be shared with kube-vip
+apiserver_endpoint: 192.168.86.9
 
 # k3s_token is required  masters can talk together securely
 # this token should be alpha numeric only
@@ -91,6 +92,7 @@ extra_server_args: >-
   --tls-san {{ apiserver_endpoint }}
   --disable servicelb
   --disable traefik
+  --default-local-storage-path /mnt/data/local-storage
 
 extra_agent_args: >-
   {{ extra_args }}
@@ -121,7 +123,8 @@ metal_lb_speaker_tag_version: v0.14.8
 metal_lb_controller_tag_version: v0.14.8
 
 # metallb ip range for load balancer
-metal_lb_ip_range: 192.168.86.10-192.168.86.20
+# Must stay below .20, where Google Wifi's DHCP range starts, and must not include apiserver_endpoint
+metal_lb_ip_range: 192.168.86.10-192.168.86.19
 
 # deploy traefik?
 deploy_traefik: true
