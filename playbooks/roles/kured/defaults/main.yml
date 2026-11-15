@@ -1,0 +1,14 @@
+---
+# Kured (Kubernetes Reboot Daemon): reboots nodes one at a time, after a drain, whenever
+# unattended-upgrades leaves /var/run/reboot-required behind (new kernel, libc, systemd, ...).
+kured_namespace: kube-system
+kured_release_name: kured
+
+# Helm Chart details (pinned - bump deliberately)
+kured_helm_repo_name: kubereboot
+kured_helm_repo_url: https://kubereboot.github.io/charts
+kured_chart_name: kured
+kured_chart_version: 6.1.0
+kured_helm_values_file: "{{ role_path }}/files/helm-values.yaml"
+
+kured_kubeconfig: "{{ ansible_user_dir }}/.kube/config"
