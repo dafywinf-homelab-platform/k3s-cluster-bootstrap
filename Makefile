@@ -1,7 +1,10 @@
 # Official Ansible Dev Tools image (bundles ansible-lint AND yamllint) - (pin versions for reproducibility)
 ANSIBLE_DEV_TOOLS_IMG ?= ghcr.io/ansible/community-ansible-dev-tools:v25.5.2
 
-SHELL := /bin/bash
+# Where Galaxy collections are installed (keep in sync with ansible.cfg)
+GALAXY_DIR            ?= .ansible/collections
+ANSIBLE_REQUIREMENTS  ?= requirements.yml
+INVENTORY ?= inventory/hosts.yml
 
 # --- Core docker run params ---------------------------------------------------
 DOCKER      ?= docker
@@ -10,23 +13,28 @@ UID_GID     := $(shell id -u):$(shell id -g)
 MOUNT       := -v $(REPO_ROOT):/workspace -w /workspace
 NET         ?= --network=host
 
+SHELL := /bin/bash
+
+# --- TTY handling -------------------------------------------------------------
 ifeq ($(CI),true)
 TTY :=
 else
 TTY := -t
 endif
 
-# Where Galaxy collections are installed (keep in sync with ansible.cfg)
-GALAXY_DIR            ?= .ansible/collections
-ANSIBLE_REQUIREMENTS  ?= requirements.yml
-
 # Single docker run template (ansible.cfg drives paths)
 RUN := $(DOCKER) run --rm $(TTY) -u $(UID_GID) $(NET) $(MOUNT)
 
+# SSH agent forwarding (preferred: avoids copying private keys)
+SSH_KEYS ?= true
+ifeq ($(SSH_KEYS),true)
+RUN := $(RUN) -e HOME=/home/ansible -v $(HOME)/.ssh:/home/ansible/.ssh:ro
+endif
 
 .PHONY: all help clean install test lint \
         validate validate-ansible validate-yaml \
-        collections-clean collections-install collections-reset
+        collections-clean collections-install collections-reset \
+        verify bootstrap
 
 # --- “Standard” entry points --------------------------------------------------
 
@@ -84,3 +92,11 @@ collections-install:
 
 collections-reset: collections-clean collections-install
 	@echo ">> Collections reset complete"
+
+# --- Execute Boot Strapping ------------------------------------------------------------
+
+# bootstrap will verify hosts first, then run full site.yml
+bootstrap: collections-install
+	@echo ">> Running ansible-playbook with inventory $(RUN)"
+	@$(RUN) $(ANSIBLE_DEV_TOOLS_IMG) bash -lc '\
+		ansible-playbook -i $(INVENTORY) site.yml'
