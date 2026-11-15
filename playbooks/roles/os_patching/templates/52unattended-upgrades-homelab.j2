@@ -1,0 +1,10 @@
+// {{ ansible_managed }}
+// Added on top of Ubuntu's 50unattended-upgrades (apt config lists accumulate across files).
+
+// Also install regular bug-fix updates, not just security updates.
+Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-updates";
+};
+
+// Never reboot from here: kured reboots nodes one at a time, drained, in its 03:00-05:00 window.
+Unattended-Upgrade::Automatic-Reboot "false";

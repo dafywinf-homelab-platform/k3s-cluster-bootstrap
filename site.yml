@@ -5,6 +5,9 @@
 - name: Install k3s
   import_playbook: playbooks/install_k3s.yml
 
+- name: Configure automatic OS patching
+  import_playbook: playbooks/configure_os_patching.yml
+
 - name: Install Helm
   import_playbook: playbooks/install_helm.yml
 

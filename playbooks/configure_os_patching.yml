@@ -1,0 +1,12 @@
+---
+- name: Configure automatic OS patching (unattended-upgrades + Ubuntu Pro Livepatch)
+  hosts: k3s_cluster
+  become: true
+  pre_tasks:
+    - name: Load secrets.yml (gitignored, may be ansible-vault encrypted) if present
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../secrets.yml"
+      when: lookup('ansible.builtin.fileglob', playbook_dir ~ '/../secrets.yml') | length > 0
+  roles:
+    - os_patching
+    - ubuntu_pro
