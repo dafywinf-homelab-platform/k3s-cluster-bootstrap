@@ -1,0 +1,13 @@
+---
+# Ubuntu Pro (free personal subscription: up to 5 machines) - enables Livepatch and ESM security updates.
+# The token comes from https://ubuntu.com/pro and is a credential: keep it in the gitignored
+# secrets.yml at the repo root, ideally encrypted with `ansible-vault encrypt secrets.yml`:
+#
+#   ubuntu_pro_token: "<token>"
+#
+# With no token set, this role is skipped.
+ubuntu_pro_token: ""
+ubuntu_pro_services:
+  - livepatch
+  - esm-infra
+  - esm-apps

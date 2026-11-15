@@ -1,0 +1,25 @@
+---
+# Daily automatic OS patching via Ubuntu unattended-upgrades (runs ~06:00 from apt-daily-upgrade.timer).
+# Reboots are left to kured, which acts on /var/run/reboot-required.
+- name: Ensure unattended-upgrades is installed
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Enable daily package list refresh and unattended upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Include -updates and leave reboots to kured
+  ansible.builtin.template:
+    src: 52unattended-upgrades-homelab.j2
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-homelab
+    owner: root
+    group: root
+    mode: '0644'
