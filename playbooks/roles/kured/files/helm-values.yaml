@@ -1,0 +1,22 @@
+---
+configuration:
+  # Ubuntu unattended-upgrades runs daily at ~06:00-06:45 and drops this file when a reboot is needed;
+  # the reboot then happens in the next night's window.
+  rebootSentinel: /var/run/reboot-required
+  timeZone: Europe/London
+  startTime: "03:00"
+  endTime: "05:00"
+  period: 10m             # how often each node checks for the sentinel / tries to take the lock
+  concurrency: 1          # one node at a time - keeps etcd quorum on the 3 masters
+  drainTimeout: 15m       # give up on a stuck drain; the node retries on the next period
+  forceReboot: false      # never reboot a node that failed to drain
+  annotateNodes: true
+
+# Masters are tainted node-role.kubernetes.io/master=true:NoSchedule and need patching too
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule

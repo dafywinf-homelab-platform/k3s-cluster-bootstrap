@@ -11,5 +11,8 @@
 - name: Install Traefik
   import_playbook: playbooks/install_traefik.yml
 
+- name: Install Kured
+  import_playbook: playbooks/install_kured.yml
+
 # - name: Install ArgoCD
 #   import_playbook: playbooks/install_argocd.yml
