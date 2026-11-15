@@ -11,12 +11,6 @@
 - name: Install Helm
   import_playbook: playbooks/install_helm.yml
 
-- name: Install Traefik
-  import_playbook: playbooks/install_traefik.yml
-
-- name: Install Kured
-  import_playbook: playbooks/install_kured.yml
-
 - name: Install system-upgrade-controller (k3s upgrades)
   import_playbook: playbooks/upgrade_k3s.yml
 
