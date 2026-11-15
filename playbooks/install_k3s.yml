@@ -86,26 +86,34 @@
       when: ansible_hostname == hostvars[groups[group_name_master | default('master')][0]]['ansible_hostname']
 
 
-# Create the local-storage mount for local-storage on all worker nodes
-- name: Ensure /mnt/data/local-storage exists on all worker nodes
+# Create the local-storage and longhorn storage directories on the data disk of all worker nodes.
+# /mnt/data is formatted and mounted by cloud-init (proxmox-vm-bootstrap); if it is not a separate
+# mount, these directories would silently land on the 30 GiB root disk instead of the data disk.
+- name: Ensure /mnt/data storage directories exist on all worker nodes
   hosts: k3s_workers
   become: true
+  gather_facts: true
   tasks:
+    - name: Assert /mnt/data is a separate mount of the scsi1 data disk
+      ansible.builtin.assert:
+        that:
+          - ansible_mounts | selectattr('mount', 'equalto', '/mnt/data') | list | length == 1
+          - (ansible_mounts | selectattr('mount', 'equalto', '/mnt/data') | first).device
+            != (ansible_mounts | selectattr('mount', 'equalto', '/') | first).device
+        fail_msg: >-
+          /mnt/data is not mounted, or is the root disk mounted twice, on {{ inventory_hostname }}.
+          Check /etc/fstab mounts the scsi1 disk by UUID (see proxmox-vm-bootstrap ADR 001).
+
     - name: Create /mnt/data/local-storage directory
-      file:
+      ansible.builtin.file:
         path: /mnt/data/local-storage
         state: directory
         owner: root
         group: root
         mode: '0755'
 
-# Create the long-horn storage-mount for longhorn on all worker nodes
-- name: Ensure /mnt/data/kafka exists on all worker nodes
-  hosts: k3s_workers
-  become: true
-  tasks:
     - name: Create /mnt/data/longhorn-storage directory
-      file:
+      ansible.builtin.file:
         path: /mnt/data/longhorn-storage
         state: directory
         owner: root
