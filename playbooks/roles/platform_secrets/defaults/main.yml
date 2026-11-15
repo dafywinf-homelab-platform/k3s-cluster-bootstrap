@@ -1,0 +1,10 @@
+---
+# Kubernetes Secrets that Argo CD-managed apps reference but that must never be in Git.
+# Values come from the git-ignored secrets.yml at the repo root.
+platform_secrets_kubeconfig: "{{ ansible_user_dir }}/.kube/config"
+
+# Grafana admin login, referenced by kube-monitoring-chart (grafana.admin.existingSecret)
+grafana_admin_namespace: kube-monitoring
+grafana_admin_secret_name: grafana-admin
+grafana_admin_user: admin
+grafana_admin_password: ""

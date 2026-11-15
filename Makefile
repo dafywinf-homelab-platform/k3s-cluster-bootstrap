@@ -99,4 +99,4 @@ collections-reset: collections-clean collections-install
 bootstrap: collections-install
 	@echo ">> Running ansible-playbook with inventory $(RUN)"
 	@$(RUN) $(ANSIBLE_DEV_TOOLS_IMG) bash -lc '\
-		ansible-playbook -i $(INVENTORY) site.yml'
+		ansible-playbook -i $(INVENTORY) $(if $(wildcard secrets.yml),-e @secrets.yml) site.yml'
