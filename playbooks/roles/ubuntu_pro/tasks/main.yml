@@ -1,0 +1,33 @@
+---
+- name: Skip Ubuntu Pro when no token is configured
+  ansible.builtin.debug:
+    msg: "ubuntu_pro_token is not set (see roles/ubuntu_pro/defaults/main.yml) - skipping Ubuntu Pro"
+  when: ubuntu_pro_token | length == 0
+
+- name: Attach and enable Ubuntu Pro services
+  when: ubuntu_pro_token | length > 0
+  block:
+    - name: Read Ubuntu Pro status
+      ansible.builtin.command: pro status --format json
+      register: ubuntu_pro_status
+      changed_when: false
+
+    - name: Attach machine to Ubuntu Pro
+      ansible.builtin.command: pro attach {{ ubuntu_pro_token }}
+      no_log: true
+      when: not (ubuntu_pro_status.stdout | from_json).attached
+      changed_when: true
+
+    - name: Re-read Ubuntu Pro status
+      ansible.builtin.command: pro status --format json
+      register: ubuntu_pro_status
+      changed_when: false
+
+    - name: Enable Ubuntu Pro services
+      ansible.builtin.command: pro enable {{ item }} --assume-yes
+      loop: "{{ ubuntu_pro_services }}"
+      when: >-
+        (ubuntu_pro_status.stdout | from_json).services
+        | selectattr('name', 'equalto', item)
+        | map(attribute='status') | first | default('') != 'enabled'
+      changed_when: true
