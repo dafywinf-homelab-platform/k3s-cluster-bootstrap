@@ -1,0 +1,10 @@
+---
+# Rancher system-upgrade-controller: upgrades k3s in place, masters one at a time, then workers (drained).
+# The target is k3s_version from group_vars, so a fresh install and an upgrade use the same setting.
+# Kubernetes only supports one minor version per step: for a multi-minor upgrade, run playbooks/upgrade_k3s.yml
+# once per minor with -e k3s_version=<latest patch of that minor>, then set the final version in group_vars.
+suc_version: v0.21.1
+suc_release_url: "https://github.com/rancher/system-upgrade-controller/releases/download/{{ suc_version }}"
+suc_namespace: system-upgrade
+suc_k3s_version: "{{ k3s_version }}"
+suc_kubeconfig: "{{ ansible_user_dir }}/.kube/config"
