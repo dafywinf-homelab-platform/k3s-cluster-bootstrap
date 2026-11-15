@@ -1,5 +1,5 @@
 ---
-- name: Deploy ArgoCD with Bitnami Helm Chart
+- name: Deploy Argo CD (official chart) and the root platform Application
   hosts: k3s_master-1
   #  environment:
   #    K8S_AUTH_KUBECONFIG: "{{ ansible_user_dir }}/.kube/config"

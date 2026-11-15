@@ -1,2 +1,20 @@
-# Helm Chart version
-argocd_chart_version: latest
+---
+# Argo CD from the official argo-helm chart (quay.io images). Replaces the Bitnami chart, whose images are no longer
+# published.
+argocd_namespace: argocd
+argocd_release_name: argocd
+
+# Helm Chart details (pinned - bump deliberately)
+argocd_helm_repo_name: argo
+argocd_helm_repo_url: https://argoproj.github.io/argo-helm
+argocd_chart_name: argo-cd
+argocd_chart_version: 10.18.0
+argocd_helm_values_file: "{{ role_path }}/files/helm-values.yaml"
+
+argocd_kubeconfig: "{{ ansible_user_dir }}/.kube/config"
+
+# Root "platform" Application (app-of-apps) - everything below it lives in the GitOps repo
+argocd_gitops_repo_url: https://github.com/dafywinf-homelab-platform/homelab-gitops.git
+argocd_gitops_revision: main
+argocd_root_app_name: platform
+argocd_root_app_path: apps/platform

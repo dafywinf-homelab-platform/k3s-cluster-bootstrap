@@ -1,13 +1,23 @@
 ---
-- name: Retrieve the ArgoCD admin password
-  shell: |
-    kubectl get secret {{ argocd_release_name }}-initial-admin-secret \
-      -n {{ argocd_namespace }} \
-      -o jsonpath='{.data.password}' | \
-      base64 -d
-  register: admin_password
-  become: true
+- name: Create the root "{{ argocd_root_app_name }}" Application (app-of-apps)
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'root-app.yaml.j2') | from_yaml }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
 
-- name: Display the ArgoCD admin password
-  debug:
-    msg: "ArgoCD admin password: {{ admin_password.stdout }}"
+- name: Retrieve the Argo CD admin password
+  kubernetes.core.k8s_info:
+    kind: Secret
+    name: argocd-initial-admin-secret
+    namespace: "{{ argocd_namespace }}"
+    kubeconfig: "{{ argocd_kubeconfig }}"
+  register: argocd_admin_secret
+  no_log: true
+
+- name: Show where to log in
+  ansible.builtin.debug:
+    msg: >-
+      Argo CD: https://argocd.192.168.86.10.sslip.io (user admin).
+      Password: kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret
+      -o jsonpath='{.data.password}' | base64 -d
+  when: argocd_admin_secret.resources | length > 0
