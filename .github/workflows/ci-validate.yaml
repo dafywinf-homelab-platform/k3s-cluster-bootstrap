@@ -33,7 +33,7 @@ jobs:
         run: mkdir -p .ansible/collections
 
       - name: Cache Ansible collections
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .ansible/collections
           key: ansible-collections-${{ hashFiles('requirements.yml') }}-v1
