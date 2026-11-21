@@ -5,7 +5,7 @@ apiVersion: upgrade.cattle.io/v1
 kind: Plan
 metadata:
   name: server-plan
-  namespace: {{ suc_namespace }}
+  namespace: {{ system_upgrade_controller_namespace }}
 spec:
   concurrency: 1
   cordon: true
@@ -24,14 +24,14 @@ spec:
   serviceAccountName: system-upgrade
   upgrade:
     image: rancher/k3s-upgrade
-  version: {{ suc_k3s_version }}
+  version: {{ system_upgrade_controller_k3s_version }}
 ---
 # Workers after all masters are done (prepare step waits for server-plan), drained one at a time.
 apiVersion: upgrade.cattle.io/v1
 kind: Plan
 metadata:
   name: agent-plan
-  namespace: {{ suc_namespace }}
+  namespace: {{ system_upgrade_controller_namespace }}
 spec:
   concurrency: 1
   cordon: true
@@ -50,4 +50,4 @@ spec:
   serviceAccountName: system-upgrade
   upgrade:
     image: rancher/k3s-upgrade
-  version: {{ suc_k3s_version }}
+  version: {{ system_upgrade_controller_k3s_version }}
