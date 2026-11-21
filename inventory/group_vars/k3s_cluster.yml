@@ -95,6 +95,7 @@ extra_server_args: >-
   --disable servicelb
   --disable traefik
   --default-local-storage-path /mnt/data/local-storage
+  --secrets-encryption
 
 extra_agent_args: >-
   {{ extra_args }}
