@@ -97,8 +97,16 @@ extra_server_args: >-
   --default-local-storage-path /mnt/data/local-storage
   --secrets-encryption
 
+# Workers only: keep memory back for k3s and the OS, and evict pods before the node runs out. Without this a build
+# pod exhausted a 4 GB worker (2026-11-21): no swap, the kubelet's default 100Mi eviction threshold was never
+# reached in time, and the node thrashed and went NotReady for 13 minutes.
 extra_agent_args: >-
   {{ extra_args }}
+  --kubelet-arg=kube-reserved=memory=384Mi
+  --kubelet-arg=system-reserved=memory=256Mi
+  --kubelet-arg=eviction-hard=memory.available<300Mi,nodefs.available<10%,imagefs.available<15%,nodefs.inodesFree<5%
+  --kubelet-arg=eviction-soft=memory.available<500Mi
+  --kubelet-arg=eviction-soft-grace-period=memory.available=30s
 
 # image tag for kube-vip
 kube_vip_tag_version: v0.8.2
