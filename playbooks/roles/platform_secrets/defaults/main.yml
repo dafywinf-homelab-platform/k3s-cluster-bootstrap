@@ -8,3 +8,9 @@ grafana_admin_namespace: kube-monitoring
 grafana_admin_secret_name: grafana-admin
 grafana_admin_user: admin
 grafana_admin_password: ""
+
+# Jenkins admin login, referenced by homelab-gitops apps/platform/ci/jenkins.yaml (controller.admin.existingSecret)
+jenkins_admin_namespace: jenkins
+jenkins_admin_secret_name: jenkins-admin
+jenkins_admin_user: admin
+jenkins_admin_password: ""
