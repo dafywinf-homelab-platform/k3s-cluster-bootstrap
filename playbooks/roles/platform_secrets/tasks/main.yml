@@ -30,35 +30,3 @@
         admin-user: "{{ grafana_admin_user }}"
         admin-password: "{{ grafana_admin_password }}"
   no_log: true
-
-- name: Require a Jenkins admin password
-  ansible.builtin.assert:
-    that: jenkins_admin_password | length >= 16
-    fail_msg: "Set jenkins_admin_password (16+ characters) in secrets.yml"
-    quiet: true
-
-- name: Ensure the {{ jenkins_admin_namespace }} namespace exists
-  kubernetes.core.k8s:
-    state: present
-    kubeconfig: "{{ platform_secrets_kubeconfig }}"
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ jenkins_admin_namespace }}"
-
-- name: Create the Jenkins admin Secret
-  kubernetes.core.k8s:
-    state: present
-    kubeconfig: "{{ platform_secrets_kubeconfig }}"
-    definition:
-      apiVersion: v1
-      kind: Secret
-      type: Opaque
-      metadata:
-        name: "{{ jenkins_admin_secret_name }}"
-        namespace: "{{ jenkins_admin_namespace }}"
-      stringData:
-        jenkins-admin-user: "{{ jenkins_admin_user }}"
-        jenkins-admin-password: "{{ jenkins_admin_password }}"
-  no_log: true
