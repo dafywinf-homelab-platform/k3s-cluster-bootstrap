@@ -1,5 +1,5 @@
 ---
-- name: Create the root "{{ argocd_root_app_name }}" Application (app-of-apps)
+- name: Create the root app-of-apps Application {{ argocd_root_app_name }}
   kubernetes.core.k8s:
     state: present
     definition: "{{ lookup('ansible.builtin.template', 'root-app.yaml.j2') | from_yaml }}"
